@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime
 from st_supabase_connection import SupabaseConnection
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # --- 1. SETTINGS & CONNECTION ---
 st.set_page_config(page_title="KWS LGAS Management", layout="wide")
 
@@ -18,6 +20,8 @@ if "bulk_ids_val" not in st.session_state:
     st.session_state.bulk_ids_val = ""
 if "batch_search_val" not in st.session_state:
     st.session_state.batch_search_val = ""
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --- 2. LOGIN PAGE ---
 def login_page():
@@ -53,6 +57,8 @@ if not st.session_state["authenticated"]:
     login_page()
     st.stop()
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # --- 3. SIDEBAR NAVIGATION ---
 role = st.session_state["user_role"]
 st.sidebar.title(f"👋 {st.session_state['full_name']}")
@@ -70,6 +76,8 @@ page = st.sidebar.selectbox("Navigate", menu)
 st.sidebar.divider()
 if st.sidebar.button("Logout", use_container_width=True):
     logout()
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --- 4. DATA LOADING (Role-Filtered) ---
 @st.cache_data(ttl=60)
@@ -100,6 +108,8 @@ if page == "Dashboard":
         st.dataframe(df_main, use_container_width=True, hide_index=True)
     else:
         st.info("No cylinders found for your account.")
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --- 6. PAGE LOGIC: BULK OPERATIONS ---
 elif page == "Bulk Operations":
@@ -135,6 +145,7 @@ elif page == "Bulk Operations":
 
     st.divider()
 
+     
     # 2. UPDATE FORM
     with st.expander("📝 Process Updates", expanded=True):
         f1, f2 = st.columns(2)
@@ -170,6 +181,8 @@ elif page == "Bulk Operations":
             else:
                 st.error("Please enter at least one Cylinder ID.")
 
+    #------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
     # 3. RECONCILIATION SECTION
     if not batch_data.empty:
         st.divider()
@@ -195,6 +208,37 @@ elif page == "Cylinder Finder":
             st.dataframe(result, use_container_width=True, hide_index=True)
         else:
             st.warning("Cylinder not found or access denied.")
+            
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# --- 8. PAGE LOGIC: INVENTORY MANAGEMENT (Admin Only) ---
+elif page == "Inventory Management":
+    st.title("⚙️ System Inventory Management")
+    if role != "admin":
+        st.error("Access Denied.")
+    else:
+        st.write("Use this page to add new cylinders to the master database.")
+        with st.form("add_cylinder_form"):
+            new_id = st.text_input("Cylinder ID (Unique)")
+            new_cust = st.text_input("Assign to Customer")
+            new_cap = st.number_input("Capacity (kg)", min_value=0.0)
+            
+            if st.form_submit_button("Add to System"):
+                if new_id:
+                    try:
+                        conn.table("cylinders").insert({
+                            "Cylinder_ID": new_id.upper(),
+                            "Customer_Name": new_cust,
+                            "Capacity_kg": new_cap,
+                            "Status": "Empty",
+                            "Current_Location": "Testing Center"
+                        }).execute()
+                        st.success(f"Cylinder {new_id} added successfully!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+                else:
+                    st.warning("Please enter a Cylinder ID.")
 
 
 
