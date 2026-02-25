@@ -31,39 +31,79 @@ if "batch_search_val" not in st.session_state:
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# --- 2. LOGIN PAGE ---
+# --- 2. LOGIN & REGISTRATION PAGE ---
 def login_page():
     st.title("🔐 KWS Cylinder Portal")
-    with st.container(border=True):
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        if st.button("Login", use_container_width=True, type="primary"):
-            try:
-                # Auth with Supabase
-                auth_res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-                user_id = auth_res.user.id
-                
-                # Fetch profile details
-                prof_res = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
-                
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = prof_res.data["role"]
-                st.session_state["client_link"] = prof_res.data["client_link"]
-                st.session_state["full_name"] = prof_res.data.get("full_name", "User")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Login failed: {e}")
+    
+    # Create tabs for Login and Register
+    tab1, tab2 = st.tabs(["Login", "Register New Company"])
 
-# Logout Function
+    with tab1:
+        with st.container(border=True):
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_pass")
+            if st.button("Login", use_container_width=True, type="primary"):
+                try:
+                    # Auth with Supabase
+                    auth_res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    user_id = auth_res.user.id
+                    
+                    # Fetch profile details
+                    prof_res = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
+                    
+                    st.session_state["authenticated"] = True
+                    st.session_state["user_role"] = prof_res.data["role"]
+                    st.session_state["client_link"] = prof_res.data["client_link"]
+                    st.session_state["full_name"] = prof_res.data.get("full_name", "User")
+                    st.rerun()
+                except Exception as e:
+                    st.error("Login failed. Please check your credentials.")
+
+    with tab2:
+        st.subheader("Create Company Account")
+        with st.container(border=True):
+            new_email = st.text_input("Company Email", key="reg_email")
+            new_password = st.text_input("Set Password", type="password", key="reg_pass")
+            full_name = st.text_input("Contact Person Name", key="reg_name")
+            company_name = st.text_input("Company Name (Exact name for data linking)", key="reg_company")
+            
+            st.info("Note: New accounts are set to 'private_user' by default for security.")
+            
+            if st.button("Create Account", use_container_width=True):
+                if not new_email or not new_password or not company_name:
+                    st.warning("Please fill in all fields.")
+                else:
+                    try:
+                        # 1. Sign up user in Supabase Auth (Internal table)
+                        auth_res = supabase.auth.sign_up({
+                            "email": new_email, 
+                            "password": new_password
+                        })
+                        
+                        if auth_res.user:
+                            # 2. Create the profile in your public 'profiles' table
+                            supabase.table("profiles").insert({
+                                "id": auth_res.user.id,
+                                "full_name": full_name,
+                                "client_link": company_name,
+                                "role": "private_user" # Default safety role
+                            }).execute()
+                            
+                            st.success("✅ Account created! You can now switch to the Login tab.")
+                    except Exception as e:
+                        st.error(f"Registration failed: {e}")
+
+# Logout Function (Keep this as is)
 def logout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
 
+# Authentication Gatekeeper
 if not st.session_state["authenticated"]:
     login_page()
     st.stop()
-
+    
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --- 3. SIDEBAR NAVIGATION ---
@@ -210,6 +250,7 @@ elif page == "Inventory Management":
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Error: {e}")
+
 
 
 
