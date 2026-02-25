@@ -65,7 +65,7 @@ def login_page():
             new_email = st.text_input("Company Email", key="reg_email")
             new_password = st.text_input("Set Password", type="password", key="reg_pass")
             full_name = st.text_input("Contact Person Name", key="reg_name")
-            company_name = st.text_input("Company Name (Exact name for data linking)", key="reg_company")
+            company_name = st.text_input("Company (customer) Name (Exact name for (cust name) data linking)", key="reg_company")
             
             st.info("Note: New accounts are set to 'private_user' by default for security.")
             
@@ -155,7 +155,7 @@ if page == "Dashboard":
 
 # --- 6. BULK OPERATIONS ---
 elif page == "Bulk Operations":
-    st.title("🚛 Bulk Management & Reconciliation")
+    st.title("Bulk Management & Reconciliation")
     TARGET_TABLE = "TEST_cylinders" 
     
     with st.container(border=True):
@@ -171,7 +171,7 @@ elif page == "Bulk Operations":
             batch_data = pd.DataFrame(res.data)
             
             if not batch_data.empty:
-                if c_btn.button("🔍 Pull Pending IDs"):
+                if c_btn.button("Pull Pending IDs"):
                     remaining = batch_data[batch_data["Status"] != "Full"]
                     ids = remaining["Cylinder_ID"].tolist() if not remaining.empty else batch_data["Cylinder_ID"].tolist()
                     st.session_state.bulk_ids_val = "\n".join(map(str, ids))
@@ -181,7 +181,7 @@ elif page == "Bulk Operations":
 
     st.divider()
 
-    with st.expander("📝 Process Updates", expanded=True):
+    with st.expander("Process Updates", expanded=True):
         f1, f2 = st.columns(2)
         with f1:
             t_batch = st.text_input("Confirm Batch ID", key="confirm_batch")
@@ -238,7 +238,7 @@ elif page == "Inventory Management":
     st.title("⚙️ System Inventory Management")
     with st.form("add_cylinder_form"):
         new_id = st.text_input("Cylinder ID")
-        new_cust = st.text_input("Assign to Customer")
+        new_cust = st.text_input("Assign to Company (Customer):")
         new_cap = st.number_input("Capacity (kg)", min_value=0.0)
         if st.form_submit_button("Add to System"):
             try:
@@ -250,6 +250,7 @@ elif page == "Inventory Management":
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Error: {e}")
+
 
 
 
