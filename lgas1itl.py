@@ -19,6 +19,10 @@ def init_connection():
 
 supabase = init_connection()
 
+# --- NEW: Initialize Refresh Timestamp to prevent KeyError ---
+if "last_refresh" not in st.session_state:
+    st.session_state["last_refresh"] = "Initializing..."
+
 # Initialize Session State
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -300,6 +304,7 @@ footer_text = f"""
 </div>
 """
 st.markdown(footer_text, unsafe_allow_html=True)
+
 
 
 
