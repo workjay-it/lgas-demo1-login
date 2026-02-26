@@ -233,37 +233,59 @@ elif page == "Cylinder Finder":
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# --- 8. INVENTORY MANAGEMENT ---
+# --- 8. INVENTORY MANAGEMENT (Scan-Friendly Version) ---
 elif page == "Inventory Management":
-    st.title("System Inventory Management")
-    with st.form("add_cylinder_form"):
-        # Add new input fields for the missing columns
-        new_id = st.text_input("Cylinder ID")
-        new_cust = st.text_input("Assign to Customer")
-        new_cap = st.number_input("Capacity (kg)", min_value=0.0)
-        new_fill = st.slider("Current Fill %", 0, 100, 0) # Added slider for Fill_Percent
-        new_loc_pin = st.text_input("Location PIN (500xxx)") # Added PIN field
+    st.title("⚙️ System Inventory Management")
+    
+    # 1. Scanner Input Field (Top of form)
+    # When a barcode is scanned here, it will trigger the lookup
+    scan_id = st.text_input("🔍 Scan Cylinder Barcode", key="scanner_input").strip().upper()
 
-        if st.form_submit_button("Add to System"):
+    # 2. Lookup Logic: If something is scanned, try to find existing data
+    existing_data = {}
+    if scan_id:
+        res = supabase.table("cylinders").select("*").eq("Cylinder_ID", scan_id).execute()
+        if res.data:
+            existing_data = res.data[0]
+            st.success(f"Found existing data for {scan_id}")
+        else:
+            st.info("New Cylinder detected. Please fill in details manually.")
+
+    # 3. The Management Form
+    with st.form("inventory_form", clear_on_submit=True):
+        # Fields auto-fill if data was found, otherwise stay blank/default
+        form_id = st.text_input("Cylinder ID", value=existing_data.get("Cylinder_ID", scan_id))
+        form_cust = st.text_input("Assign to Customer", value=existing_data.get("Customer_Name", ""))
+        form_cap = st.number_input("Capacity (kg)", value=float(existing_data.get("Capacity_kg", 0.0)))
+        form_pin = st.text_input("Location PIN", value=str(existing_data.get("Location_PIN", "")))
+        
+        # New: Use columns for fill and status
+        col1, col2 = st.columns(2)
+        with col1:
+            form_fill = st.slider("Fill %", 0, 100, int(existing_data.get("Fill_Percent", 0)))
+        with col2:
+            form_stat = st.selectbox("Status", ["Empty", "Full", "Damaged"], 
+                                    index=["Empty", "Full", "Damaged"].index(existing_data.get("Status", "Empty")))
+
+        submit = st.form_submit_button("Save/Update Cylinder")
+
+        if submit:
+            payload = {
+                "Cylinder_ID": form_id.upper(),
+                "Customer_Name": form_cust,
+                "Capacity_kg": form_cap,
+                "Location_PIN": form_pin,
+                "Fill_Percent": form_fill,
+                "Status": form_stat,
+                "Last_Test_Date": datetime.now().strftime("%Y-%m-%d")
+            }
             try:
-                # Add the missing keys to the dictionary below
-                supabase.table("cylinders").insert({
-                    "Cylinder_ID": new_id.upper(),
-                    "Customer_Name": new_cust,
-                    "Capacity_kg": new_cap,
-                    "Fill_Percent": new_fill,          # New field
-                    "Location_PIN": new_loc_pin,       # New field
-                    "Status": "Empty",
-                    "Current_Location": "Testing Center",
-                    "Last_Test_Date": datetime.now().strftime("%Y-%m-%d"), # Auto-fill today
-                    "Next_Test_Due": "2031-01-01"      # Example future date
-                }).execute()
-                st.success("Cylinder added with all details!")
+                # 'upsert' will update if ID exists, or insert if it's new
+                supabase.table("cylinders").upsert(payload).execute()
+                st.success(f"✅ Cylinder {form_id} successfully saved!")
                 st.cache_data.clear()
             except Exception as e:
-                st.error(f"Error: {e}")
-
-
+                st.error(f"Error saving data: {e}")
 
 
 
