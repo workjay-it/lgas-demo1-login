@@ -235,21 +235,34 @@ elif page == "Cylinder Finder":
 
 # --- 8. INVENTORY MANAGEMENT ---
 elif page == "Inventory Management":
-    st.title("⚙️ System Inventory Management")
+    st.title("System Inventory Management")
     with st.form("add_cylinder_form"):
+        # Add new input fields for the missing columns
         new_id = st.text_input("Cylinder ID")
-        new_cust = st.text_input("Assign to Company (Customer):")
+        new_cust = st.text_input("Assign to Customer")
         new_cap = st.number_input("Capacity (kg)", min_value=0.0)
+        new_fill = st.slider("Current Fill %", 0, 100, 0) # Added slider for Fill_Percent
+        new_loc_pin = st.text_input("Location PIN (500xxx)") # Added PIN field
+
         if st.form_submit_button("Add to System"):
             try:
+                # Add the missing keys to the dictionary below
                 supabase.table("cylinders").insert({
-                    "Cylinder_ID": new_id.upper(), "Customer_Name": new_cust,
-                    "Capacity_kg": new_cap, "Status": "Empty", "Current_Location": "Testing Center"
+                    "Cylinder_ID": new_id.upper(),
+                    "Customer_Name": new_cust,
+                    "Capacity_kg": new_cap,
+                    "Fill_Percent": new_fill,          # New field
+                    "Location_PIN": new_loc_pin,       # New field
+                    "Status": "Empty",
+                    "Current_Location": "Testing Center",
+                    "Last_Test_Date": datetime.now().strftime("%Y-%m-%d"), # Auto-fill today
+                    "Next_Test_Due": "2031-01-01"      # Example future date
                 }).execute()
-                st.success("Added!")
+                st.success("Cylinder added with all details!")
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Error: {e}")
+
 
 
 
