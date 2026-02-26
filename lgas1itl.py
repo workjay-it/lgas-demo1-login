@@ -132,6 +132,18 @@ if st.sidebar.button("Logout", use_container_width=True):
 # --- 4. DATA LOADING ---
 @st.cache_data(ttl=60)
 def load_cylinders():
+    st.session_state["last_refresh"] = datetime.now().strftime("%I:%M:%S %p")
+    
+    query = supabase.table("cylinders").select("*")
+    
+    if st.session_state.get("user_role") != "admin":
+        client_link = st.session_state.get("client_link")
+        if client_link:
+            query = query.eq("Customer_Name", client_link)
+            
+    res = query.execute()
+    return pd.DataFrame(res.data)
+    
     query = supabase.table("cylinders").select("*")
     if role != "admin":
         query = query.eq("Customer_Name", st.session_state["client_link"])
@@ -304,6 +316,7 @@ footer_text = f"""
 </div>
 """
 st.markdown(footer_text, unsafe_allow_html=True)
+
 
 
 
