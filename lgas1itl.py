@@ -6,7 +6,7 @@ from supabase import create_client, Client
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --- 1. SETTINGS & CONNECTION ---
-st.set_page_config(page_title="KWS LGAS Management", layout="wide")
+st.set_page_config(page_title="Gas Management", layout="wide")
 
 # Fetch credentials directly from st.secrets
 URL = st.secrets["connections"]["supabase"]["url"]
@@ -304,6 +304,7 @@ footer_text = f"""
 </div>
 """
 st.markdown(footer_text, unsafe_allow_html=True)
+
 
 
 
