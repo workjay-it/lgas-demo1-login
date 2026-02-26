@@ -235,11 +235,11 @@ elif page == "Cylinder Finder":
 
 # --- 8. INVENTORY MANAGEMENT (Scan-Friendly Version) ---
 elif page == "Inventory Management":
-    st.title("⚙️ System Inventory Management")
+    st.title("System Inventory Management")
     
     # 1. Scanner Input Field (Top of form)
     # When a barcode is scanned here, it will trigger the lookup
-    scan_id = st.text_input("🔍 Scan Cylinder Barcode", key="scanner_input").strip().upper()
+    scan_id = st.text_input("Scan Barcode", key="scanner_input").strip().upper()
 
     # 2. Lookup Logic: If something is scanned, try to find existing data
     existing_data = {}
@@ -282,10 +282,11 @@ elif page == "Inventory Management":
             try:
                 # 'upsert' will update if ID exists, or insert if it's new
                 supabase.table("cylinders").upsert(payload).execute()
-                st.success(f"✅ Cylinder {form_id} successfully saved!")
+                st.success(f"Cylinder {form_id} successfully saved!")
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Error saving data: {e}")
+
 
 
 
